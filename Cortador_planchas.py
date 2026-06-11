@@ -46,15 +46,44 @@ def pedir_si_no(mensaje: str) -> bool:
             return False
         print("❌ Responde con 's' o 'n'.")
 
+
+
+def elegir_dimensiones_plancha() -> Tuple[float, float]:
+    """Muestra un menú con dimensiones estándar y permite ingreso manual."""
+    print("\n=== 📏 DIMENSIONES DE LA PLANCHA ===")
+    print("1. Estándar OSB/Terciado (122 cm x 244 cm)")
+    print("2. Estándar Melamina Grande (183 cm x 250 cm)")
+    print("3. Ingreso Manual Personalizado")
+    
+    while True:
+        opcion = input("Selecciona una opción (1, 2 o 3): ").strip()
+        
+        if opcion == "1":
+            print("✅ Seleccionado: 122 x 244 cm")
+            return 122.0, 244.0
+        elif opcion == "2":
+            print("✅ Seleccionado: 183 x 250 cm")
+            return 183.0, 250.0
+        elif opcion == "3":
+            ancho = pedir_float("Ancho de la plancha (X) en cm: ")
+            alto = pedir_float("Alto de la plancha (Y) en cm: ")
+            return ancho, alto
+        else:
+            print("❌ Opción inválida. Intenta ingresando 1, 2 o 3.")
+
+
+
+
 def obtener_datos_usuario() -> Dict[str, Any]:
     """
     Función principal de interacción por consola.
     Retorna un diccionario con la configuración de la plancha y la lista de piezas.
     """
     print("\n=== ⚙️  CONFIGURACIÓN DE LA PLANCHA ===")
-    ancho_plancha = pedir_float("Ancho de la plancha (X) en cm: ")
-    alto_plancha  = pedir_float("Alto de la plancha (Y) en cm: ")
-    kerf = pedir_float("Espacio de corte (kerf/sierra) en cm: ")
+    # Llamamos al nuevo menú
+    ancho_plancha, alto_plancha = elegir_dimensiones_plancha()
+    
+    kerf = pedir_float("\nEspacio de corte (kerf/grosor de la sierra) en cm: ")
     permitir_rotacion = pedir_si_no("¿Permitir rotación de piezas para encajar mejor?")
 
     print("\n=== 📦 INGRESO DE PIEZAS A CORTAR ===")
