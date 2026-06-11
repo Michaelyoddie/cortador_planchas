@@ -72,6 +72,28 @@ def elegir_dimensiones_plancha() -> Tuple[float, float]:
             print("❌ Opción inválida. Intenta ingresando 1, 2 o 3.")
 
 
+def elegir_espesor_sierra() -> float:
+    """Muestra un menú con grosores de sierra comunes y permite ingreso manual."""
+    print("\n=== 🪚 ESPESOR DE LA SIERRA (KERF) ===")
+    print("1. Disco estándar (0.5 cm / 5 mm)")
+    print("2. Disco fino (0.3 cm / 3 mm)")
+    print("3. Ingreso Manual Personalizado")
+    
+    while True:
+        opcion = input("Selecciona una opción (1, 2 o 3): ").strip()
+        
+        if opcion == "1":
+            print("✅ Seleccionado: Disco estándar (0.5 cm)")
+            return 0.5
+        elif opcion == "2":
+            print("✅ Seleccionado: Disco fino (0.3 cm)")
+            return 0.3
+        elif opcion == "3":
+            return pedir_float("Ingresa el grosor exacto de la sierra en cm: ")
+        else:
+            print("❌ Opción inválida. Intenta ingresando 1, 2 o 3.")
+
+
 
 
 def obtener_datos_usuario() -> Dict[str, Any]:
