@@ -46,8 +46,6 @@ def pedir_si_no(mensaje: str) -> bool:
             return False
         print("❌ Responde con 's' o 'n'.")
 
-
-
 def elegir_dimensiones_plancha() -> Tuple[float, float]:
     """Muestra un menú con dimensiones estándar y permite ingreso manual."""
     print("\n=== 📏 DIMENSIONES DE LA PLANCHA ===")
@@ -71,7 +69,6 @@ def elegir_dimensiones_plancha() -> Tuple[float, float]:
         else:
             print("❌ Opción inválida. Intenta ingresando 1, 2 o 3.")
 
-
 def elegir_espesor_sierra() -> float:
     """Muestra un menú con grosores de sierra comunes y permite ingreso manual."""
     print("\n=== 🪚 ESPESOR DE LA SIERRA (KERF) ===")
@@ -92,9 +89,6 @@ def elegir_espesor_sierra() -> float:
             return pedir_float("Ingresa el grosor exacto de la sierra en cm: ")
         else:
             print("❌ Opción inválida. Intenta ingresando 1, 2 o 3.")
-
-
-
 
 def obtener_datos_usuario() -> Dict[str, Any]:
     """
@@ -118,7 +112,40 @@ def obtener_datos_usuario() -> Dict[str, Any]:
     print("="*40)
     print("Escribe 'terminar' en el nombre para finalizar el ingreso.\n")
     
-    # ... (el resto del código sigue igual hacia abajo)
+    piezas = []
+    
+    while True:
+        nombre = input("Nombre de la pieza: ").strip()
+        # Condición de salida del bucle
+        if nombre.lower() == "terminar":
+            if not piezas:
+                print("⚠️  Debes ingresar al menos una pieza.")
+                continue
+            break
+            
+        cantidad = pedir_int(f"Cantidad de '{nombre}': ")
+        ancho = pedir_float("Ancho (cm): ")
+        alto  = pedir_float("Alto (cm): ")
+        
+        # Lógica para permitir rotación global o restringirla por pieza
+        rotar_pieza = permitir_rotacion
+        if permitir_rotacion:
+            if not pedir_si_no(f"¿La pieza '{nombre}' se puede rotar?"):
+                rotar_pieza = False
+
+        piezas.append({
+            "nombre": nombre,
+            "cantidad": cantidad,
+            "ancho": ancho,
+            "alto": alto,
+            "rotacion_permitida": rotar_pieza
+        })
+
+    return {
+        "plancha": (ancho_plancha, alto_plancha),
+        "kerf": kerf,
+        "piezas": piezas
+    }
 
 # ==========================================
 # 2. MÓDULO DE LÓGICA DE NEGOCIO (CORE)
