@@ -195,84 +195,80 @@ def expandir_piezas(piezas_raw: List[Dict]) -> Tuple[List[Dict], Dict, Dict]:
     
     return piezas_individuales, mapa_leyenda, colores
 
-def verificar_colision(candidato: Dict, colocadas: List[Dict], kerf: float) -> bool:
-    """
-    Verifica si un rectángulo 'candidato' se superpone con alguno de la lista 'colocadas'.
-    Considera el 'kerf' (grosor de la sierra) como parte del espacio ocupado.
-    """
-    cx, cy, cw, ch = candidato["x"], candidato["y"], candidato["ancho"], candidato["alto"]
-    
-    for otra in colocadas:
-        ox, oy, ow, oh = otra["x"], otra["y"], otra["ancho"], otra["alto"]
-        
-        # Matemáticamente, dos rectángulos NO se tocan si están separados
-        # totalmente a la izquierda, derecha, arriba o abajo.
-        # Aquí comprobamos lo contrario (si se tocan).
-        no_solapa = (cx + cw + kerf <= ox) or \
-                    (ox + ow + kerf <= cx) or \
-                    (cy + ch + kerf <= oy) or \
-                    (oy + oh + kerf <= cy)
-        
-        if not no_solapa:
-            return True # ¡Chocan!
-            
-    return False
+
 
 def calcular_cortes_una_plancha(ancho_plancha: float, alto_plancha: float, kerf: float, piezas_pendientes: List[Dict]) -> Tuple[List[Dict], List[Dict]]:
     """
     Intenta colocar el máximo número de piezas pendientes en UNA sola plancha.
-    Utiliza una heurística de 'Puntos Candidatos' (Bottom-Left).
+    Utiliza el algoritmo de 'Corte de Guillotina' (Slicing Tree con Free Rectangles)
+    para garantizar que la sierra pueda atravesar la madera de lado a lado.
     """
     colocadas = []
     no_colocadas = []
+    
+    # Inicialmente, el único espacio libre es la plancha completa
+    espacios_libres = [{"x": 0.0, "y": 0.0, "ancho": ancho_plancha, "alto": alto_plancha}]
 
     for pieza in piezas_pendientes:
         colocada_flag = False
         
-        # Puntos donde tiene sentido intentar poner una pieza:
-        # 1. El origen (0,0)
-        # 2. Justo a la derecha de una pieza existente
-        # 3. Justo arriba de una pieza existente
-        puntos_candidatos = [(0.0, 0.0)]
-        for p in colocadas:
-            puntos_candidatos.append((p["x"] + p["ancho"] + kerf, p["y"]))
-            puntos_candidatos.append((p["x"], p["y"] + p["alto"] + kerf))
-        
-        # Ordenamos los puntos: preferimos abajo (Y menor) y luego izquierda (X menor)
-        puntos_candidatos.sort(key=lambda pos: (pos[1], pos[0]))
-        
-        # Probamos cada punto candidato
-        for x, y in puntos_candidatos:
-            # Optimización: Si el punto de inicio ya está fuera, ni lo intentamos
-            if x >= ancho_plancha or y >= alto_plancha:
-                continue
+        # Ordenamos los espacios libres de menor a mayor área. 
+        # Esto nos obliga a aprovechar primero los recortes pequeños antes de gastar madera de la zona grande.
+        espacios_libres.sort(key=lambda e: e["ancho"] * e["alto"])
 
-            # Definimos orientaciones: Normal y (si se permite) Rotada
+        for i, espacio in enumerate(espacios_libres):
+            ex, ey, ew, eh = espacio["x"], espacio["y"], espacio["ancho"], espacio["alto"]
+            
+            # Definimos orientaciones permitidas
             orientaciones = [(pieza["ancho"], pieza["alto"])]
             if pieza["rotacion"]:
                 orientaciones.append((pieza["alto"], pieza["ancho"]))
             
-            # Usamos 'set' para evitar probar lo mismo dos veces si la pieza es cuadrada
-            for w, h in set(orientaciones): 
-                # 1. ¿Cabe en la plancha?
-                if x + w > ancho_plancha or y + h > alto_plancha:
-                    continue
-                
-                # 2. ¿Choca con otras piezas?
-                candidato = {"x": x, "y": y, "ancho": w, "alto": h}
-                if not verificar_colision(candidato, colocadas, kerf):
-                    # Si pasa las pruebas, guardamos la pieza
+            for w, h in set(orientaciones):
+                # ¿La pieza cabe en ESTE espacio libre?
+                if w <= ew and h <= eh:
+                    
+                    # 1. Colocamos la pieza en la esquina inferior izquierda del espacio
+                    candidato = {"x": ex, "y": ey, "ancho": w, "alto": h}
                     pieza_final = pieza.copy()
                     pieza_final.update(candidato)
                     colocadas.append(pieza_final)
                     colocada_flag = True
-                    break # Salimos del bucle de rotaciones
-            
+                    
+                    # 2. ALGORITMO DE GUILLOTINA: Dividimos el sobrante
+                    # Retiramos el espacio original porque ya lo modificamos
+                    espacios_libres.pop(i)
+                    
+                    # Calculamos cuánto espacio sobra hacia los lados contando la hoja de sierra (kerf)
+                    w_restante = ew - w - kerf
+                    h_restante = eh - h - kerf
+                    
+                    # Evitamos dimensiones negativas si el corte llega justo al borde de la plancha
+                    w_restante = w_restante if w_restante > 0 else 0
+                    h_restante = h_restante if h_restante > 0 else 0
+
+                    # Maximal Area Split: Decidimos si cortar horizontal o verticalmente
+                    # Elegimos el corte que deje el retazo más grande continuo para futuras piezas
+                    if w_restante * eh > ew * h_restante:
+                        # CORTE VERTICAL (El espacio a la derecha llega hasta el tope superior)
+                        if h_restante > 0:
+                            espacios_libres.append({"x": ex, "y": ey + h + kerf, "ancho": w, "alto": h_restante}) # Recorte arriba
+                        if w_restante > 0:
+                            espacios_libres.append({"x": ex + w + kerf, "y": ey, "ancho": w_restante, "alto": eh}) # Recorte derecho (largo)
+                    else:
+                        # CORTE HORIZONTAL (El espacio arriba llega hasta el tope derecho)
+                        if w_restante > 0:
+                            espacios_libres.append({"x": ex + w + kerf, "y": ey, "ancho": w_restante, "alto": h}) # Recorte derecho
+                        if h_restante > 0:
+                            espacios_libres.append({"x": ex, "y": ey + h + kerf, "ancho": ew, "alto": h_restante}) # Recorte arriba (largo)
+                    
+                    break # La pieza ya se colocó, salimos del ciclo de rotaciones
+                    
             if colocada_flag:
-                break # Salimos del bucle de puntos, pasamos a la siguiente pieza
+                break # La pieza ya se colocó, pasamos a la siguiente pieza de la lista
         
         if not colocada_flag:
-            no_colocadas.append(pieza) # No cupo en esta hoja
+            no_colocadas.append(pieza) # Si revisó todos los espacios y no cupo, se va a sobrantes
 
     return colocadas, no_colocadas
 
