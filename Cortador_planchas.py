@@ -101,50 +101,24 @@ def obtener_datos_usuario() -> Dict[str, Any]:
     Función principal de interacción por consola.
     Retorna un diccionario con la configuración de la plancha y la lista de piezas.
     """
-    print("\n=== ⚙️  CONFIGURACIÓN DE LA PLANCHA ===")
-    # Llamamos al nuevo menú
+    print("\n" + "="*40)
+    print(" ⚙️  CONFIGURACIÓN DE LA PLANCHA")
+    print("="*40)
+    
     ancho_plancha, alto_plancha = elegir_dimensiones_plancha()
     
-    kerf = pedir_float("\nEspacio de corte (kerf/grosor de la sierra) en cm: ")
+    print() # <-- Espacio en blanco para separar
+    kerf = elegir_espesor_sierra()
+    
+    print() # <-- Espacio en blanco para separar
     permitir_rotacion = pedir_si_no("¿Permitir rotación de piezas para encajar mejor?")
 
-    print("\n=== 📦 INGRESO DE PIEZAS A CORTAR ===")
+    print("\n" + "="*40)
+    print(" 📦 INGRESO DE PIEZAS A CORTAR")
+    print("="*40)
     print("Escribe 'terminar' en el nombre para finalizar el ingreso.\n")
     
-    piezas = []
-    
-    while True:
-        nombre = input("Nombre de la pieza: ").strip()
-        # Condición de salida del bucle
-        if nombre.lower() == "terminar":
-            if not piezas:
-                print("⚠️  Debes ingresar al menos una pieza.")
-                continue
-            break
-            
-        cantidad = pedir_int(f"Cantidad de '{nombre}': ")
-        ancho = pedir_float("Ancho (cm): ")
-        alto  = pedir_float("Alto (cm): ")
-        
-        # Lógica para permitir rotación global o restringirla por pieza
-        rotar_pieza = permitir_rotacion
-        if permitir_rotacion:
-            if not pedir_si_no(f"¿La pieza '{nombre}' se puede rotar?"):
-                rotar_pieza = False
-
-        piezas.append({
-            "nombre": nombre,
-            "cantidad": cantidad,
-            "ancho": ancho,
-            "alto": alto,
-            "rotacion_permitida": rotar_pieza
-        })
-
-    return {
-        "plancha": (ancho_plancha, alto_plancha),
-        "kerf": kerf,
-        "piezas": piezas
-    }
+    # ... (el resto del código sigue igual hacia abajo)
 
 # ==========================================
 # 2. MÓDULO DE LÓGICA DE NEGOCIO (CORE)
