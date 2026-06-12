@@ -31,28 +31,28 @@ def procesar_cortes():
         if not planchas_resultados:
             return jsonify({"error": "Las piezas son demasiado grandes para la plancha."}), 400
             
-        primera_plancha = planchas_resultados[0]
-        
-        cortes_frontend = []
-        area_usada = 0
-        
-        for pieza in primera_plancha:
-            cortes_frontend.append({
-                "x": pieza["x"],
-                "y": pieza["y"],
-                "w": pieza["ancho"],
-                "h": pieza["alto"],
-                "nombre": pieza["nombre"]
-            })
-            area_usada += (pieza["ancho"] * pieza["alto"])
-            
+        # NUEVO: Guardamos TODAS las planchas, no solo la primera
+        planchas_completas = []
         area_total = ancho * alto
-        desperdicio = 100 - ((area_usada / area_total) * 100)
+
+        for plancha in planchas_resultados:
+            cortes_frontend = []
+            area_usada = 0
+            for pieza in plancha:
+                cortes_frontend.append({
+                    "x": pieza["x"], "y": pieza["y"], "w": pieza["ancho"], "h": pieza["alto"], "nombre": pieza["nombre"]
+                })
+                area_usada += (pieza["ancho"] * pieza["alto"])
+            
+            desperdicio = 100 - ((area_usada / area_total) * 100)
+            planchas_completas.append({
+                "cortes": cortes_frontend,
+                "desperdicio": round(desperdicio, 1)
+            })
         
         respuesta = {
             "planchas": len(planchas_resultados),
-            "desperdicio": round(desperdicio, 1),
-            "cortes": cortes_frontend
+            "detalle_planchas": planchas_completas
         }
         
         return jsonify(respuesta)
